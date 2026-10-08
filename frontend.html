@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bubble Health - Emergency Medical Portal</title>
+    <!-- Tailwind CSS for structural utility layout rules -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        premiumBlueDark: '#0a1128', // Sleek deep midnight base
+                        premiumBlueCard: '#111e47', // Rich premium royal-blue card background
+                        goldBorder: '#dfba6b',      // Elegant crisp gold line color
+                        brandDark: '#070c1e',       // Ultra-dark contrast accents
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icon Elements Pack -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* True Metallic Gold Gradient matching image_761e58.png */
+        .gold-gradient-btn {
+            background: linear-gradient(90deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fcf6ba 75%, #bf953f 100%);
+            background-size: 200% auto;
+            transition: 0.3s ease;
+        }
+        .gold-gradient-btn:hover {
+            background-position: right center;
+            box-shadow: 0 0 15px rgba(223, 186, 107, 0.4);
+        }
+        /* Custom ambient gold glow for cards */
+        .gold-glow {
+            box-shadow: 0 10px 30px -10px rgba(7, 12, 30, 0.7), 0 0 1px rgba(223, 186, 107, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-premiumBlueDark via-[#0f1c44] to-brandDark font-sans min-h-screen flex flex-col selection:bg-goldBorder selection:text-brandDark text-slate-200">
+
+    <!-- Navbar Banner Component -->
+    <header class="bg-brandDark/80 backdrop-blur-md text-white border-b border-goldBorder/40 px-6 py-4 shadow-lg">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="gold-gradient-btn text-brandDark p-2 rounded-xl font-black text-xl tracking-wider shadow border border-white/40">
+                    BH+
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white tracking-wide">BUBBLE HEALTH</h1>
+                    <p class="text-xs text-slate-400">Unified Emergency Health Database Terminal</p>
+                </div>
+            </div>
+            <div class="hidden sm:flex text-right flex-col text-xs text-slate-400">
+                <span>Authorized Clinician Terminal</span>
+                <span class="text-goldBorder font-medium flex items-center gap-1 justify-end">
+                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> System Online
+                </span>
+            </div>
+            <!-- Signed-in doctor identity + logout (shown after authentication) -->
+            <div id="doctorBar" class="hidden items-center gap-4">
+                <div class="text-right text-xs leading-tight">
+                    <span class="text-slate-400 block">Signed in as</span>
+                    <span id="doctorNameLabel" class="text-goldBorder font-semibold"></span>
+                </div>
+                <button
+                    onclick="handleLogout()"
+                    id="logoutBtn"
+                    class="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-600 transition rounded-xl text-xs font-bold tracking-wide uppercase flex items-center gap-1.5 shadow"
+                >
+                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Application Container Layout -->
+    <main class="flex-grow max-w-4xl w-full mx-auto p-4 md:p-8 flex flex-col justify-center items-center">
+        
+        <!-- STEP 0: DOCTOR AUTHENTICATION SCREEN (Sign In / Sign Up) -->
+        <div id="authScreen" class="w-full bg-premiumBlueCard rounded-[2rem] border border-goldBorder gold-glow overflow-hidden transition-all duration-300 max-w-xl">
+            <div class="p-8 sm:p-10 text-center">
+                <div class="w-14 h-14 bg-brandDark text-goldBorder mx-auto rounded-full flex items-center justify-center mb-6 border border-goldBorder/50 shadow-inner">
+                    <i data-lucide="stethoscope" class="w-6 h-6"></i>
+                </div>
+
+                <h2 id="authTitle" class="text-2xl font-bold text-white mb-2 tracking-wide">Clinician Sign In</h2>
+                <p id="authSubtitle" class="text-sm text-slate-400 mb-6 max-w-sm mx-auto">
+                    Restricted to authorized doctors. Please authenticate to access the patient terminal.
+                </p>
+
+                <!-- Sign In / Sign Up toggle tabs -->
+                <div class="flex justify-center gap-2 mb-6 bg-brandDark/60 p-1.5 rounded-xl border border-goldBorder/30 max-w-xs mx-auto">
+                    <button type="button" id="tabSignin" onclick="switchAuthTab('signin')"
+                        class="flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition gold-gradient-btn text-brandDark shadow">
+                        Sign In
+                    </button>
+                    <button type="button" id="tabSignup" onclick="switchAuthTab('signup')"
+                        class="flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition text-slate-400 hover:text-white">
+                        Sign Up
+                    </button>
+                </div>
+
+                <!-- Generic auth message display (error or success) -->
+                <div id="authMessage" class="hidden text-xs font-medium p-2.5 rounded-lg mb-4 text-left flex items-start gap-1.5"></div>
+
+                <!-- SIGN IN FORM -->
+                <form id="signinForm" onsubmit="handleSignin(event)" class="space-y-4 text-left">
+                    <div>
+                        <label for="signinUsername" class="block text-xs font-semibold text-slate-400 tracking-wider uppercase mb-2">
+                            Doctor Username
+                        </label>
+                        <input type="text" id="signinUsername" autocomplete="username" required
+                            placeholder="DR-1234 or 1234 or name@hpr.abdm"
+                            class="w-full px-4 py-3 bg-brandDark border border-goldBorder/40 rounded-xl text-sm font-mono text-white placeholder-slate-600 focus:outline-none focus:border-goldBorder transition-all shadow-inner" />
+                    </div>
+                    <div>
+                        <label for="signinPassword" class="block text-xs font-semibold text-slate-400 tracking-wider uppercase mb-2">
+                            Password
+                        </label>
+                        <input type="password" id="signinPassword" autocomplete="current-password" required
+                            placeholder="••••••••"
+                            class="w-full px-4 py-3 bg-brandDark border border-goldBorder/40 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-goldBorder transition-all shadow-inner" />
+                    </div>
+                    <button type="submit" id="signinSubmit"
+                        class="w-full py-3.5 gold-gradient-btn text-brandDark font-bold rounded-xl shadow-lg flex items-center justify-center space-x-2 text-sm border border-white/20 uppercase tracking-wider">
+                        <i data-lucide="log-in" class="w-4 h-4"></i>
+                        <span>Sign In</span>
+                    </button>
+                    <p class="text-xs text-slate-500 text-center pt-1">
+                        New clinician? <button type="button" onclick="switchAuthTab('signup')" class="text-goldBorder hover:underline font-semibold">Create an account</button>
+                    </p>
+                </form>
+
+                <!-- SIGN UP FORM -->
+                <form id="signupForm" onsubmit="handleSignup(event)" class="space-y-4 text-left hidden">
+                    <div>
+                        <label for="signupUsername" class="block text-xs font-semibold text-slate-400 tracking-wider uppercase mb-2">
+                            Doctor Username
+                        </label>
+                        <input type="text" id="signupUsername" autocomplete="username" required
+                            placeholder="DR-1234, 12345 or name@hpr.abdm"
+                            class="w-full px-4 py-3 bg-brandDark border border-goldBorder/40 rounded-xl text-sm font-mono text-white placeholder-slate-600 focus:outline-none focus:border-goldBorder transition-all shadow-inner" />
+                        <p id="usernameHint" class="text-[11px] text-slate-500 mt-1.5">
+                            Accepted: 2-8 letters + 3-7 digits (e.g. DR-1234), 4-7 digits, or name@hpr.abdm
+                        </p>
+                    </div>
+                    <div>
+                        <label for="signupName" class="block text-xs font-semibold text-slate-400 tracking-wider uppercase mb-2">
+                            Full Name
+                        </label>
+                        <input type="text" id="signupName" autocomplete="name" required maxlength="100"
+                            placeholder="Dr. Jane Doe"
+                            class="w-full px-4 py-3 bg-brandDark border border-goldBorder/40 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-goldBorder transition-all shadow-inner" />
+                    </div>
+                    <div>
+                        <label for="signupSpecialization" class="block text-xs font-semibold text-slate-400 tracking-wider uppercase mb-2">
+                            Specialization <span class="normal-case font-normal text-slate-600">(optional)</span>
+                        </label>
+                        <input type="text" id="signupSpecialization" autocomplete="organization-title" maxlength="100"
+                            placeholder="e.g. Emergency Medicine"
+                            class="w-full px-4 py-3 bg-brandDark border border-goldBorder/40 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-goldBorder transition-all shadow-inner" />
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="signupPassword" class="block text-xs font-semibold text-slate-400 tracking-wider uppercase mb-2">
+                                Password
+                            </label>
+                            <input type="password" id="signupPassword" autocomplete="new-password" required
+                                placeholder="Min 8 characters"
+                                class="w-full px-4 py-3 bg-brandDark border border-goldBorder/40 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-goldBorder transition-all shadow-inner" />
+                        </div>
+                        <div>
+                            <label for="signupConfirm" class="block text-xs font-semibold text-slate-400 tracking-wider uppercase mb-2">
+                                Confirm Password
+                            </label>
+                            <input type="password" id="signupConfirm" autocomplete="new-password" required
+                                placeholder="Repeat password"
+                                class="w-full px-4 py-3 bg-brandDark border border-goldBorder/40 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-goldBorder transition-all shadow-inner" />
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-500 -mt-1">
+                        Minimum 8 characters with at least one uppercase letter, one lowercase letter and one number. Stored only as a secure hash.
+                    </p>
+                    <button type="submit" id="signupSubmit"
+                        class="w-full py-3.5 gold-gradient-btn text-brandDark font-bold rounded-xl shadow-lg flex items-center justify-center space-x-2 text-sm border border-white/20 uppercase tracking-wider">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        <span>Create Account</span>
+                    </button>
+                    <p class="text-xs text-slate-500 text-center pt-1">
+                        Already registered? <button type="button" onclick="switchAuthTab('signin')" class="text-goldBorder hover:underline font-semibold">Sign in</button>
+                    </p>
+                </form>
+            </div>
+        </div>
+
+        <!-- STEP 1: CARD LOOKUP SCREEN FRAMEWORK -->
+        <div id="lookupScreen" class="w-full bg-premiumBlueCard rounded-[2rem] border border-goldBorder gold-glow overflow-hidden transition-all duration-300 max-w-xl hidden">
+            <div class="p-8 sm:p-10 text-center">
+                <div class="w-14 h-14 bg-brandDark text-goldBorder mx-auto rounded-full flex items-center justify-center mb-6 border border-goldBorder/50 shadow-inner">
+                    <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                </div>
+                
+                <h2 class="text-2xl font-bold text-white mb-2 tracking-wide">Emergency Patient Lookup</h2>
+                <p class="text-sm text-slate-400 mb-8 max-w-sm mx-auto">
+                    Instantly retrieve live-critical metrics using the valid 12-digit identifier credentials to avoid triage delays.
+                </p>
+
+                <form id="lookupForm" onsubmit="handleLookup(event)" class="space-y-6 text-left">
+                    <div>
+                        <label for="idInput" class="block text-xs font-semibold text-slate-400 tracking-wider uppercase mb-2">
+                            Enter 12-Digit Identifier Key
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="idInput" 
+                                placeholder="0000 0000 0000" 
+                                maxlength="14"
+                                autocomplete="off"
+                                class="w-full px-5 py-4 bg-brandDark border border-goldBorder/40 rounded-xl text-xl font-mono text-center tracking-widest text-white focus:outline-none focus:border-goldBorder transition-all shadow-inner"
+                                required
+                            />
+                            <div class="absolute right-4 top-1/2 -translate-y-1/2 hidden" id="validCheck">
+                                <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+                            </div>
+                        </div>
+                        <!-- Operational Error Display Handler Node -->
+                        <p id="errorMessage" class="text-xs font-medium text-rose-400 mt-2.5 hidden items-center gap-1.5 bg-rose-950/40 p-2.5 rounded-lg border border-rose-900/50">
+                            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i> <span id="errorText">Provided credentials not found in central index. Please verify.</span>
+                        </p>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        id="lookupSubmit"
+                        class="w-full py-4 gold-gradient-btn text-brandDark font-bold rounded-xl shadow-lg flex items-center justify-center space-x-2 text-base border border-white/20 uppercase tracking-wider"
+                    >
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                        <span>Fetch EHR Profile</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- STEP 2: METRICS DASHBOARD VIEW FRAMEWORK -->
+        <div id="dashboardScreen" class="w-full bg-premiumBlueCard rounded-[2rem] border border-goldBorder gold-glow overflow-hidden transition-all duration-300 hidden">
+            <!-- Top Dashboard Bar Profile Identity Matrix Header -->
+            <div class="bg-brandDark/60 text-white p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-goldBorder/30">
+                <div class="flex items-center gap-4">
+                    <div id="patientAvatar" class="w-14 h-14 rounded-xl gold-gradient-btn text-brandDark font-black text-xl flex items-center justify-center shadow border border-white/20">
+                        <!-- Populated dynamically -->
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 id="patientName" class="text-xl font-bold text-white tracking-wide"><!-- Dynamic --></h3>
+                            <span id="patientDocBadge" class="text-xs px-2.5 py-0.5 font-bold gold-gradient-btn rounded-full text-brandDark border border-white/10"><!-- Dynamic --></span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">
+                            System Link Verification Status: <span class="text-emerald-400 font-medium">Verified Active</span>
+                        </p>
+                    </div>
+                </div>
+                <button onclick="exitDashboard()" class="px-4 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-600 transition rounded-xl text-xs font-bold tracking-wide uppercase flex items-center gap-1.5 shadow">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Exit Profile
+                </button>
+            </div>
+
+            <!-- Dashboard Vital Metrics Section Container -->
+            <div class="p-6 md:p-8 space-y-6">
+                <!-- Critical Vitals Grid Element Components -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <!-- Heart Rate Profile Panel -->
+                    <div class="bg-brandDark/50 border border-goldBorder/30 rounded-xl p-4 text-center shadow-md">
+                        <span class="block text-xs font-medium tracking-wider text-slate-400 uppercase mb-1">Heart Rate</span>
+                        <span id="vitalHeart" class="text-2xl font-bold text-rose-500"><!-- Dynamic --></span>
+                    </div>
+                    <!-- Blood Pressure Profile Panel -->
+                    <div class="bg-brandDark/50 border border-goldBorder/30 rounded-xl p-4 text-center shadow-md">
+                        <span class="block text-xs font-medium tracking-wider text-slate-400 uppercase mb-1">Blood Pressure</span>
+                        <span id="vitalBP" class="text-2xl font-bold text-sky-400"><!-- Dynamic --></span>
+                    </div>
+                    <!-- Blood Glucose Profile Panel -->
+                    <div class="bg-brandDark/50 border border-goldBorder/30 rounded-xl p-4 text-center shadow-md">
+                        <span class="block text-xs font-medium tracking-wider text-slate-400 uppercase mb-1">Blood Glucose</span>
+                        <span id="vitalGlucose" class="text-2xl font-bold text-goldBorder"><!-- Dynamic --></span>
+                    </div>
+                    <!-- Cholesterol Profile Panel -->
+                    <div class="bg-brandDark/50 border border-goldBorder/30 rounded-xl p-4 text-center shadow-md">
+                        <span class="block text-xs font-medium tracking-wider text-slate-400 uppercase mb-1">Cholesterol</span>
+                        <span id="vitalCholesterol" class="text-2xl font-bold text-purple-400"><!-- Dynamic --></span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Column Left Content Area: Pathological Records -->
+                    <div class="space-y-4">
+                        <h4 class="text-xs font-bold tracking-wider text-goldBorder uppercase flex items-center gap-2">
+                            <i data-lucide="activity" class="w-4 h-4"></i> Present Diagnostic Status
+                        </h4>
+                        
+                        <!-- Core Condition Data Block Layout -->
+                        <div class="bg-brandDark/40 rounded-xl p-4 space-y-3 border border-goldBorder/20 shadow-md">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-400 uppercase block">Primary Diagnosis</label>
+                                <p id="descDiagnosis" class="text-sm font-medium text-slate-200 mt-0.5"><!-- Dynamic --></p>
+                            </div>
+                            <hr class="border-goldBorder/10">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-400 uppercase block">Chief Complaint</label>
+                                <p id="descComplaint" class="text-sm font-medium text-slate-200 mt-0.5"><!-- Dynamic --></p>
+                            </div>
+                        </div>
+
+                        <!-- Medications Block Layout -->
+                        <h4 class="text-xs font-bold tracking-wider text-goldBorder uppercase flex items-center gap-2 pt-2">
+                            <i data-lucide="pill" class="w-4 h-4"></i> Medications & Treatment Plan
+                        </h4>
+                        <div class="bg-brandDark/40 rounded-xl p-4 border border-goldBorder/20 shadow-md">
+                            <ul id="medicationList" class="space-y-2 text-sm text-slate-300">
+                                <!-- Dynamic elements layer -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Column Right Content Area: Segment Dynamic Profile Layouts -->
+                    <div class="space-y-4">
+                        <!-- Document Information Title -->
+                        <h4 id="conditionalHeader" class="text-xs font-bold tracking-wider text-goldBorder uppercase flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-4 h-4 text-goldBorder"></i> Document Information
+                        </h4>
+                        
+                        <!-- Document Information Panel Block Wrapper -->
+                        <div id="conditionalPanel" class="rounded-xl p-4 border transition-all bg-brandDark/40 shadow-md border-goldBorder/20">
+                            <div class="space-y-2 text-sm text-slate-300">
+                                <div><span class="text-xs text-goldBorder font-bold block uppercase mb-0.5">Medical Document ID</span><span id="docIdValue">--</span></div>
+                                <div><span class="text-xs text-goldBorder font-bold block uppercase mb-0.5">Encounter Date</span><span id="docDateValue">--</span></div>
+                                <div><span class="text-xs text-goldBorder font-bold block uppercase mb-0.5">Attending Physician</span><span id="docPhysicianValue">--</span></div>
+                            </div>
+                        </div>
+
+                        <!-- System Operational Warning Bar Component -->
+                        <div class="bg-brandDark/60 border border-goldBorder/30 rounded-xl p-4 flex gap-3 shadow-md">
+                            <i data-lucide="alert-triangle" class="w-5 h-5 text-goldBorder shrink-0 mt-0.5"></i>
+                            <div>
+                                <span class="block text-xs font-bold text-goldBorder uppercase tracking-wide">Emergency Triage Guide</span>
+                                <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                                    Records fetched from central secure index cache layer. Cross-check allergy charts prior to initiating clinical anesthetic operations.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PHASE 7: LSTM information flow + gate semantics + ML status (real backend response) -->
+                <div class="rounded-xl border border-goldBorder/20 shadow-md p-5 space-y-4 bg-brandDark/40">
+                    <h4 class="text-xs font-bold tracking-wider text-goldBorder uppercase flex items-center gap-2">
+                        <i data-lucide="cpu" class="w-4 h-4"></i> LSTM Information Flow
+                    </h4>
+
+                    <div class="flex flex-wrap items-center gap-2 text-sm text-slate-200 font-medium">
+                        <span class="px-3 py-1.5 rounded-lg bg-brandDark/60 border border-goldBorder/30">Medical Document</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-goldBorder shrink-0"></i>
+                        <span class="px-3 py-1.5 rounded-lg bg-brandDark/60 border border-goldBorder/30">NLP</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-goldBorder shrink-0"></i>
+                        <span class="px-3 py-1.5 rounded-lg bg-brandDark/60 border border-goldBorder/30">Tokenization</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-goldBorder shrink-0"></i>
+                        <span class="px-3 py-1.5 rounded-lg bg-brandDark/60 border border-goldBorder/30">LSTM</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-goldBorder shrink-0"></i>
+                        <span class="px-3 py-1.5 rounded-lg bg-brandDark/60 border border-goldBorder/30">Relevant Information</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-goldBorder shrink-0"></i>
+                        <span class="px-3 py-1.5 rounded-lg bg-brandDark/60 border border-goldBorder/30">Medical Summary</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="bg-brandDark/50 border border-goldBorder/20 rounded-xl p-3">
+                            <span class="text-xs font-bold text-goldBorder uppercase tracking-wide">Forget Gate</span>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Retention control &mdash; decides how much previous cell-state (earlier medical history) is carried forward.</p>
+                        </div>
+                        <div class="bg-brandDark/50 border border-goldBorder/20 rounded-xl p-3">
+                            <span class="text-xs font-bold text-goldBorder uppercase tracking-wide">Input Gate</span>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Storage control &mdash; decides how much new medical information is written into the cell state.</p>
+                        </div>
+                        <div class="bg-brandDark/50 border border-goldBorder/20 rounded-xl p-3">
+                            <span class="text-xs font-bold text-goldBorder uppercase tracking-wide">Output Gate</span>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Exposure control &mdash; decides which parts of the cell state are exposed as the output context.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                        <span class="px-3 py-1 rounded-lg bg-emerald-950/50 border border-emerald-700/50 text-emerald-300">NLP: Completed</span>
+                        <span class="px-3 py-1 rounded-lg bg-emerald-950/50 border border-emerald-700/50 text-emerald-300">LSTM: Completed</span>
+                        <span class="px-3 py-1 rounded-lg bg-emerald-950/50 border border-emerald-700/50 text-emerald-300">Model: Loaded &middot; Reusable</span>
+                        <span id="mlExtractionStatus" class="px-3 py-1 rounded-lg bg-emerald-950/50 border border-emerald-700/50 text-emerald-300">Extraction: Successful</span>
+                    </div>
+
+                    <div class="bg-brandDark/50 rounded-xl border border-goldBorder/20 p-3">
+                        <span class="text-xs font-bold text-goldBorder uppercase tracking-wide block mb-1">Clinical / ML Summary (LSTM-extracted)</span>
+                        <p id="mlSummaryText" class="text-xs text-slate-300 leading-relaxed">&mdash;</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Content Component -->
+    <footer class="bg-brandDark/90 text-slate-500 text-xs py-6 border-t border-goldBorder/20 px-6 text-center">
+        <p>© 2026 Bubble Health Ecosystem. All telemetry operations securely audited.</p>
+    </footer>
+
+    <!-- API Communication Layer (all backend fetch calls live here) -->
+    <script src="api.js"></script>
+
+    <!-- Core Interactive Processing Engine Script Logic -->
+    <script>
+        // Patient records are no longer hard-coded here: the lookup screen
+        // fetches them from Flask via api.js -> POST /api/patient/lookup.
+
+        // Application Execution Event Lifecycle Hooks
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+            setupInputMask();
+            initAuth();
+        });
+
+        /* =================================================================
+         * DOCTOR AUTHENTICATION LAYER (Phase 2)
+         * Screen flow: authScreen -> lookupScreen -> dashboardScreen
+         * All network calls go through api.js helpers.
+         * ================================================================= */
+
+        const DOCTOR_USERNAME_PATTERN = /^(?:[a-zA-Z]{2,8}[\/\s-]?\d{3,7}|\d{4,7}|[a-zA-Z0-9._-]+@hpr\.abdm)$/;
+
+        // Show exactly one top-level screen and refresh icons.
+        function showScreen(screenId) {
+            ["authScreen", "lookupScreen", "dashboardScreen"].forEach((id) => {
+                document.getElementById(id).classList.toggle("hidden", id !== screenId);
+            });
+            lucide.createIcons();
+        }
+
+        // Restore session on page load: enter the app only if the cookie says so.
+        async function initAuth() {
+            const session = await checkSession();
+            if (session.authenticated) {
+                enterApplication(session.doctor);
+            } else {
+                showScreen("authScreen");
+            }
+        }
+
+        function enterApplication(doctor) {
+            document.getElementById("doctorNameLabel").innerText =
+                `${doctor.name || doctor.username}${doctor.specialization ? " · " + doctor.specialization : ""}`;
+            document.getElementById("doctorBar").classList.remove("hidden");
+            document.getElementById("doctorBar").classList.add("flex");
+            showScreen("lookupScreen");
+        }
+
+        function switchAuthTab(tab) {
+            const isSignin = tab === "signin";
+            document.getElementById("signinForm").classList.toggle("hidden", !isSignin);
+            document.getElementById("signupForm").classList.toggle("hidden", isSignin);
+            document.getElementById("tabSignin").className = isSignin
+                ? "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition gold-gradient-btn text-brandDark shadow"
+                : "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition text-slate-400 hover:text-white";
+            document.getElementById("tabSignup").className = !isSignin
+                ? "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition gold-gradient-btn text-brandDark shadow"
+                : "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition text-slate-400 hover:text-white";
+            document.getElementById("authTitle").innerText = isSignin ? "Clinician Sign In" : "Clinician Sign Up";
+            document.getElementById("authSubtitle").innerText = isSignin
+                ? "Restricted to authorized doctors. Please authenticate to access the patient terminal."
+                : "Register a new doctor account. Credentials are stored only as a secure one-way hash.";
+            clearAuthMessage();
+        }
+
+        function setAuthMessage(text, type) {
+            const box = document.getElementById("authMessage");
+            box.classList.remove("hidden", "bg-rose-950/40", "border", "border-rose-900/50",
+                "bg-emerald-950/40", "border-emerald-800/60");
+            if (type === "success") {
+                box.classList.add("bg-emerald-950/40", "border", "border-emerald-800/60", "text-emerald-400");
+            } else {
+                box.classList.add("bg-rose-950/40", "border", "border-rose-900/50", "text-rose-400");
+            }
+            box.innerHTML = `<i data-lucide="${type === "success" ? "check-circle-2" : "alert-circle"}" class="w-4 h-4 shrink-0 mt-px"></i><span>${text}</span>`;
+            lucide.createIcons();
+        }
+
+        function clearAuthMessage() {
+            document.getElementById("authMessage").classList.add("hidden");
+        }
+
+        function setSubmitting(button, busy) {
+            button.disabled = busy;
+            button.classList.toggle("opacity-60", busy);
+            button.classList.toggle("cursor-wait", busy);
+        }
+
+        // Frontend username validation (backend re-validates the same regex).
+        function validateUsernameInput(value) {
+            return DOCTOR_USERNAME_PATTERN.test(value.trim());
+        }
+
+        async function handleSignin(event) {
+            event.preventDefault();
+            clearAuthMessage();
+
+            const username = document.getElementById("signinUsername").value.trim();
+            const password = document.getElementById("signinPassword").value;
+            const submitBtn = document.getElementById("signinSubmit");
+
+            if (!validateUsernameInput(username)) {
+                setAuthMessage("Invalid doctor username format. Use 2-8 letters + 3-7 digits (e.g. DR-1234), 4-7 digits, or name@hpr.abdm.");
+                return;
+            }
+            if (!password) {
+                setAuthMessage("Please enter your password.");
+                return;
+            }
+
+            setSubmitting(submitBtn, true);
+            try {
+                const result = await loginDoctor(username, password);
+                setAuthMessage(result.message || "Signed in successfully.", "success");
+                document.getElementById("signinPassword").value = "";
+                enterApplication(result.doctor);
+            } catch (err) {
+                setAuthMessage(err.message || "Sign in failed. Please try again.");
+            } finally {
+                setSubmitting(submitBtn, false);
+            }
+        }
+
+        async function handleSignup(event) {
+            event.preventDefault();
+            clearAuthMessage();
+
+            const username = document.getElementById("signupUsername").value.trim();
+            const name = document.getElementById("signupName").value.trim();
+            const specialization = document.getElementById("signupSpecialization").value.trim();
+            const password = document.getElementById("signupPassword").value;
+            const confirm = document.getElementById("signupConfirm").value;
+            const submitBtn = document.getElementById("signupSubmit");
+
+            if (!validateUsernameInput(username)) {
+                setAuthMessage("Invalid doctor username format. Use 2-8 letters + 3-7 digits (e.g. DR-1234), 4-7 digits, or name@hpr.abdm.");
+                return;
+            }
+            if (!name) {
+                setAuthMessage("Please enter your full name.");
+                return;
+            }
+            if (password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password)) {
+                setAuthMessage("Password must be at least 8 characters and include an uppercase letter, a lowercase letter and a number.");
+                return;
+            }
+            if (password !== confirm) {
+                setAuthMessage("Passwords do not match. Please re-enter them.");
+                return;
+            }
+
+            setSubmitting(submitBtn, true);
+            try {
+                const result = await signupDoctor({ username, name, password, confirm_password: confirm, specialization });
+                setAuthMessage(result.message || "Account created successfully. You can now sign in.", "success");
+                switchAuthTab("signin");
+                document.getElementById("signinUsername").value = username;
+                document.getElementById("signinPassword").value = "";
+                document.getElementById("signupForm").reset();
+                setAuthMessage(result.message || "Account created successfully. You can now sign in.", "success");
+            } catch (err) {
+                setAuthMessage(err.message || "Sign up failed. Please try again.");
+            } finally {
+                setSubmitting(submitBtn, false);
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await logoutDoctor();
+            } catch (err) {
+                // Session may already be invalid; fall through to local reset.
+            }
+            const doctorBar = document.getElementById("doctorBar");
+            doctorBar.classList.add("hidden");
+            doctorBar.classList.remove("flex");
+            document.getElementById("signinForm").reset();
+            document.getElementById("signupForm").reset();
+            exitDashboard(); // hides dashboard, reveals lookup if it was open
+            switchAuthTab("signin");
+            showScreen("authScreen");
+        }
+
+        // Spacing rules masks for text string groupings (digits only - 12-digit numeric identifiers)
+        function setupInputMask() {
+            const input = document.getElementById('idInput');
+            input.addEventListener('input', (e) => {
+                let target = e.target;
+                let clean = target.value.replace(/[^0-9]/g, '');
+                let formatted = "";
+                
+                for(let i = 0; i < clean.length && i < 12; i++) {
+                    if(i == 4 || i == 8) formatted += " ";
+                    formatted += clean[i];
+                }
+                
+                target.value = formatted;
+                
+                const checkBadge = document.getElementById('validCheck');
+                if(clean.length === 12) {
+                    checkBadge.classList.remove('hidden');
+                } else {
+                    checkBadge.classList.add('hidden');
+                }
+            });
+        }
+
+        // Show/hide the lookup error box with a specific message.
+        function showLookupError(message) {
+            document.getElementById('errorText').innerText = message;
+            document.getElementById('errorMessage').classList.remove('hidden');
+            document.getElementById('errorMessage').classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function clearLookupError() {
+            document.getElementById('errorMessage').classList.add('hidden');
+            document.getElementById('errorMessage').classList.remove('flex');
+        }
+
+        // Patient lookup: validate on frontend, then call Flask via api.js.
+        async function handleLookup(event) {
+            event.preventDefault();
+            clearLookupError();
+
+            const rawInput = document.getElementById('idInput').value;
+            const normalizedId = rawInput.replace(/\s/g, '');
+            const submitBtn = document.getElementById('lookupSubmit');
+
+            // Frontend validation: exactly 12 numeric digits, nothing else.
+            if (!/^[0-9]{12}$/.test(normalizedId)) {
+                showLookupError("Please enter exactly 12 numeric digits.");
+                return;
+            }
+
+            setSubmitting(submitBtn, true);
+            try {
+                const result = await extractPatient(normalizedId);
+                renderDashboard(result);
+            } catch (err) {
+                if (err.status === 401) {
+                    // Session expired or doctor logged out elsewhere.
+                    handleLogout();
+                    setAuthMessage("Your session has expired. Please sign in again.");
+                } else if (err.status === 404) {
+                    showLookupError("No patient record found.");
+                } else if (err.status === 400) {
+                    showLookupError(err.message || "Invalid identifier format.");
+                } else if (err.status === 503) {
+                    showLookupError("Model artifacts unavailable. Please run the training step before extracting.");
+                } else {
+                    showLookupError(err.message || "Server error while retrieving the record. Please try again.");
+                }
+            } finally {
+                setSubmitting(submitBtn, false);
+            }
+        }
+
+        // Output Node View Injection Engine - renders the real backend response
+        // (source_dataset fields + Phase 7 LSTM information flow / ML status).
+        function renderDashboard(result) {
+            const patient = result.source_dataset || {};
+
+            document.getElementById('patientName').innerText = patient.name;
+            document.getElementById('patientDocBadge').innerText = patient.patient_id;
+            document.getElementById('patientAvatar').innerText = (patient.name || "?").trim().charAt(0).toUpperCase() || "?";
+
+            document.getElementById('vitalHeart').innerText = patient.heart_rate;
+            document.getElementById('vitalBP').innerText = patient.blood_pressure;
+            document.getElementById('vitalGlucose').innerText = patient.glucose;
+            document.getElementById('vitalCholesterol').innerText = patient.cholesterol;
+
+            document.getElementById('descDiagnosis').innerText = patient.diagnosis;
+            document.getElementById('descComplaint').innerText = patient.chief_complaint;
+
+            const medContainer = document.getElementById('medicationList');
+            const meds = (patient.medications && patient.medications.length) ? patient.medications : ["No medications recorded."];
+            medContainer.innerHTML = meds.map(item => `
+                <li class="flex items-start gap-2">
+                    <span class="text-goldBorder font-bold select-none">•</span>
+                    <span>${item}</span>
+                </li>
+            `).join('');
+
+            document.getElementById('docIdValue').innerText = patient.document_id;
+            document.getElementById('docDateValue').innerText = patient.encounter_date;
+            document.getElementById('docPhysicianValue').innerText = patient.physician;
+
+            // Phase 7: ML status + clinical/ML summary driven by the saved LSTM.
+            const entities = (result.lstm_extracted && result.lstm_extracted.entities) || [];
+            const uniqueTypes = [...new Set(entities.map(e => e.type))];
+            document.getElementById('mlSummaryText').innerText = entities.length
+                ? entities.map(e => e.type + " " + e.text).join(" · ")
+                : "No entities extracted by the LSTM.";
+            document.getElementById('mlExtractionStatus').innerText = entities.length
+                ? `Extraction: Successful (${uniqueTypes.length} entity types)`
+                : "Extraction: Pending";
+
+            lucide.createIcons();
+            showScreen("dashboardScreen");
+        }
+
+        // Reset and clear routing session state variables cleanly
+        function exitDashboard() {
+            document.getElementById('dashboardScreen').classList.add('hidden');
+            document.getElementById('lookupScreen').classList.remove('hidden');
+            document.getElementById('idInput').value = "";
+            document.getElementById('validCheck').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

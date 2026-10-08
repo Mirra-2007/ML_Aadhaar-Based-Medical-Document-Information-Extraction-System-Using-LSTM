@@ -1,0 +1,46 @@
+{
+  "tag_to_id": {
+    "O": 0,
+    "B-BP": 1,
+    "B-HR": 2,
+    "I-HR": 3,
+    "B-GLU": 4,
+    "I-GLU": 5,
+    "B-CHOL": 6,
+    "I-CHOL": 7,
+    "B-DX": 8,
+    "I-DX": 9,
+    "B-MED": 10,
+    "I-MED": 11,
+    "B-DOSE": 12,
+    "I-DOSE": 13
+  },
+  "id_to_tag": {
+    "0": "O",
+    "1": "B-BP",
+    "2": "B-HR",
+    "3": "I-HR",
+    "4": "B-GLU",
+    "5": "I-GLU",
+    "6": "B-CHOL",
+    "7": "I-CHOL",
+    "8": "B-DX",
+    "9": "I-DX",
+    "10": "B-MED",
+    "11": "I-MED",
+    "12": "B-DOSE",
+    "13": "I-DOSE"
+  },
+  "scheme": "BIO",
+  "entity_types": [
+    "BP",
+    "HR",
+    "GLU",
+    "CHOL",
+    "DX",
+    "MED",
+    "DOSE"
+  ],
+  "label_rules_version": "1.0",
+  "label_generation": "See labels.py module docstring (deterministic regex rules over the clinical-note body)."
+}

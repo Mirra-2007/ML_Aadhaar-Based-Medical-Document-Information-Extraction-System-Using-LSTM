@@ -1,0 +1,30 @@
+{
+    "dr-1234": {
+        "username": "DR-1234",
+        "name": "Dr Jane Doe",
+        "specialization": "Emergency Medicine",
+        "password_hash": "$2b$12$.zpqwZ/9GcNLzQuSa2ox6.sblbdhdZS7wtP4WOT6QGEO6RiLmmWoW",
+        "created_at": "2026-10-08T03:51:37.530061+00:00"
+    },
+    "dr-9913": {
+        "username": "DR-9913",
+        "name": "Phase6 Test Doctor",
+        "specialization": "General Medicine",
+        "password_hash": "$2b$12$89UaaUFN5QdvN7UxhSYq7u9YfOibhbY/0gX1kyHeuhG3sgt95aTK6",
+        "created_at": "2026-10-08T05:54:00.005717+00:00"
+    },
+    "dr-2310": {
+        "username": "DR-2310",
+        "name": "Dr. Mirra",
+        "specialization": "Emergency Medicine",
+        "password_hash": "$2b$12$xS5aoRBYNueqFklM4uWNjONhrEZBIRzAdfKWXtEavoTzuV8HJWXqW",
+        "created_at": "2026-10-08T06:38:49.385278+00:00"
+    },
+    "dr-0511": {
+        "username": "DR-0511",
+        "name": "Dr. Anisha",
+        "specialization": "Surgery",
+        "password_hash": "$2b$12$qLUbn5ckmi1g2kwbKa1itOSR7k1JXltnyMG9kqDIwDE5XC1cbHtbi",
+        "created_at": "2026-10-08T07:46:12.306999+00:00"
+    }
+}

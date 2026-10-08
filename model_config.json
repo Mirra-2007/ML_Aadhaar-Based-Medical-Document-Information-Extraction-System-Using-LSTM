@@ -1,0 +1,29 @@
+{
+  "framework": "pytorch",
+  "torch_version": "2.14.1+cpu",
+  "python_version": "3.14.0",
+  "seed": 42,
+  "architecture": "Embedding-LSTM-Linear",
+  "vocab_size": 229,
+  "embed_dim": 32,
+  "hidden_dim": 64,
+  "num_layers": 1,
+  "num_tags": 14,
+  "pad_id": 0,
+  "hyperparameters": {
+    "embed_dim": 32,
+    "hidden_dim": 64,
+    "num_layers": 1,
+    "learning_rate": 0.001,
+    "batch_size": 8,
+    "max_epochs": 150,
+    "patience": 15,
+    "loss": "CrossEntropyLoss(ignore_index=-100)",
+    "optimizer": "Adam",
+    "epochs_trained": 150
+  },
+  "input_format": "LongTensor (batch, length) of Phase 4 token ids",
+  "output_format": "FloatTensor (batch, length, num_tags) of logits",
+  "label_scheme": "BIO, see tags.json / labels.py",
+  "phase4_vocab_file": "C:\\Users\\mirra\\Downloads\\model\\data\\nlp\\vocab.json"
+}
